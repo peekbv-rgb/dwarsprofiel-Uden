@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: sensor-dashboard
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: EXCEL_URL
+        value: https://water-tech.cboost.nl/excel
