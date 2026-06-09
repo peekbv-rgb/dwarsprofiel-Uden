@@ -101,3 +101,54 @@ async function fetchAndParse() {
       if (!byDay[dateKey]) byDay[dateKey] = { hrs: [], temp: [], hum: [] };
       byDay[dateKey].hrs.push(Math.round(hourFrac * 1000) / 1000);
       byDay[dateKey].temp.push(Math.round(temp * 10) / 10);
+      byDay[dateKey].hum.push(Math.round(hum * 10) / 10);
+    }
+
+    for (const [day, vals] of Object.entries(byDay)) {
+      if (!result[day]) result[day] = {};
+      result[day][sensor] = { height, ...vals };
+    }
+
+    console.log(sensor, ': processed', Object.keys(byDay).length, 'days');
+  }
+
+  return result;
+}
+
+// Debug endpoint
+app.get('/api/debug', async (req, res) => {
+  try {
+    const response = await fetch(EXCEL_URL, {
+      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': '*/*' },
+      redirect: 'follow'
+    });
+    const contentType = response.headers.get('content-type');
+    const buffer = await response.buffer();
+    res.json({
+      status: response.status,
+      contentType,
+      bufferSize: buffer.length,
+      first100bytes: buffer.slice(0, 100).toString('hex')
+    });
+  } catch (err) {
+    res.json({ error: err.message });
+  }
+});
+
+app.get('/api/data', async (req, res) => {
+  try {
+    const now = Date.now();
+    if (!cache || now - cacheTime > CACHE_TTL) {
+      cache = await fetchAndParse();
+      cacheTime = now;
+    }
+    res.json({ ok: true, fetched: new Date(cacheTime).toISOString(), data: cache });
+  } catch (err) {
+    console.error('Error in /api/data:', err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT}, EXCEL_URL=${EXCEL_URL}`));
