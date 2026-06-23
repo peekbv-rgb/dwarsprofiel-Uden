@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kas Sensoren — Dwarsprofiel</title>
+<title>Vergelijking Kas 3 vs Kas 4</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
 h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; }
 .subtitle { font-size: 13px; color: #777; margin-bottom: 24px; text-align: center; }
-.card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); width: 100%; max-width: 960px; }
+.card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); width: 100%; max-width: 1000px; margin-bottom: 16px; }
 .status { font-size: 12px; color: #aaa; text-align: right; margin-bottom: 12px; }
 .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
 .tabs { display: flex; gap: 6px; }
@@ -21,12 +21,16 @@ h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; 
 .navbtn:hover:not(:disabled) { background: #f0f0f0; }
 .navbtn:disabled { opacity: 0.3; cursor: default; }
 .daytitle { font-size: 16px; font-weight: 600; min-width: 130px; text-align: center; }
-.legend-wrap { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 12px; }
-.kas-block { display: flex; flex-direction: column; gap: 5px; }
-.kas-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-.li { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555; }
+.pair-block { margin-bottom: 28px; }
+.pair-block:last-child { margin-bottom: 0; }
+.pair-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: #333; }
+.pair-sub { font-size: 12px; color: #888; margin-bottom: 10px; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; font-size: 12px; }
+.li { display: flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 4px; }
+.li.kas3 { background: #e8f5e9; color: #1b5e20; }
+.li.kas4 { background: #e3f2fd; color: #0d47a1; }
 .sw { width: 22px; height: 3px; display: inline-block; border-radius: 2px; }
-.chart-wrap { position: relative; width: 100%; height: 340px; }
+.chart-wrap { position: relative; width: 100%; height: 280px; }
 .dots { text-align: center; font-size: 12px; color: #bbb; margin-top: 10px; letter-spacing: 3px; }
 .loading { text-align: center; padding: 60px; color: #888; font-size: 14px; }
 .error { text-align: center; padding: 40px; color: #c0392b; font-size: 14px; background: #fdf0f0; border-radius: 8px; }
@@ -40,8 +44,8 @@ h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; 
 </head>
 <body>
 
-<h1>Kas Sensoren — Dwarsprofiel</h1>
-<p class="subtitle">Temperatuur &amp; luchtvochtigheid per kas en hoogte</p>
+<h1>Vergelijking Kas 3 vs Kas 4</h1>
+<p class="subtitle">Temperatuur &amp; luchtvochtigheid — Kas 3 (groen) vs Kas 4 (blauw)</p>
 
 <div class="card">
   <div class="status" id="status">Laden...</div>
@@ -49,16 +53,27 @@ h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; 
 </div>
 
 <script>
-// Sensor config: id, label, kas, height, color, dash
-const SENSORS = [
-  { id: 'VDB45', label: 'VDB45 — 29 cm',  kas: 'Kas 3', color: '#1D9E75', dash: [] },
-  { id: 'VDB39', label: 'VDB39 — 128 cm', kas: 'Kas 3', color: '#0a5c3a', dash: [6,3] },
-  { id: 'VDB37', label: 'VDB37 — 29 cm',  kas: 'Kas 4', color: '#378ADD', dash: [] },
-  { id: 'VDB36', label: 'VDB36 — 128 cm', kas: 'Kas 4', color: '#1a4f8a', dash: [6,3] },
-  { id: 'VDB14', label: 'VDB14 — 184 cm', kas: 'Kas 4', color: '#7B52CC', dash: [3,3] },
+// Two pairs to compare: Kas 3 vs Kas 4 at similar positions
+const PAIRS = [
+  {
+    title: 'Paar 1: VDB45 (Kas 3, 29 cm) ↔ VDB14 (Kas 4, 184 cm)',
+    subtitle: 'Vergelijking op verschillende hoogtes',
+    sensors: [
+      { id: 'VDB45', kas: 'Kas 3', height: 29,  color: '#1D9E75' },
+      { id: 'VDB14', kas: 'Kas 4', height: 184, color: '#1976D2' }
+    ]
+  },
+  {
+    title: 'Paar 2: VDB39 (Kas 3, 128 cm) ↔ VDB36 (Kas 4, 128 cm)',
+    subtitle: 'Vergelijking op gelijke hoogte',
+    sensors: [
+      { id: 'VDB39', kas: 'Kas 3', height: 128, color: '#1D9E75' },
+      { id: 'VDB36', kas: 'Kas 4', height: 128, color: '#1976D2' }
+    ]
+  }
 ];
 
-let DATA = null, DAYS = [], dayIdx = 0, mode = 'temp', chart = null;
+let DATA = null, DAYS = [], dayIdx = 0, mode = 'temp', charts = [];
 
 function fmtDay(d) {
   const p = d.split('-');
@@ -71,19 +86,20 @@ function mkLabel(h) {
   return hr.toString().padStart(2,'0') + ':' + mn.toString().padStart(2,'0');
 }
 
-function mkDatasets(day, m) {
-  return SENSORS.map(s => {
+function mkDatasets(pair, day, m) {
+  return pair.sensors.map(s => {
     const d = DATA[day] && DATA[day][s.id];
-    if (!d || !d.hrs.length) return { label: s.label, data: [], borderColor: s.color, borderWidth: 1.5, pointRadius: 0, tension: 0 };
+    if (!d || !d.hrs.length) return { label: s.id, data: [], borderColor: s.color, borderWidth: 2, pointRadius: 0 };
     return {
-      label: s.label,
+      label: `${s.id} — ${s.kas} (${s.height} cm)`,
       data: d.hrs.map((h, j) => ({ x: h, y: d[m][j] })),
       borderColor: s.color,
-      borderDash: s.dash,
-      borderWidth: 2,
+      backgroundColor: s.color + '20',
+      borderWidth: 2.2,
       pointRadius: 0,
       tension: 0.2,
-      spanGaps: false
+      spanGaps: false,
+      fill: false
     };
   });
 }
@@ -94,11 +110,11 @@ function render() {
   document.getElementById('prev').disabled = dayIdx === 0;
   document.getElementById('next').disabled = dayIdx === DAYS.length - 1;
   document.getElementById('dots').textContent = DAYS.map((_, i) => i === dayIdx ? '●' : '·').join(' ');
-  if (chart) {
-    chart.data.datasets = mkDatasets(day, mode);
+  charts.forEach((chart, i) => {
+    chart.data.datasets = mkDatasets(PAIRS[i], day, mode);
     chart.options.scales.y.title.text = mode === 'temp' ? 'Temperatuur (°C)' : 'Luchtvochtigheid (%)';
     chart.update('none');
-  }
+  });
 }
 
 function go(d) { dayIdx = Math.max(0, Math.min(DAYS.length - 1, dayIdx + d)); render(); }
@@ -109,19 +125,22 @@ function setMode(m, btn) {
   render();
 }
 
-function buildLegend() {
-  const kassen = [...new Set(SENSORS.map(s => s.kas))];
-  return kassen.map(kas => `
-    <div class="kas-block">
-      <div class="kas-title">${kas}</div>
-      ${SENSORS.filter(s => s.kas === kas).map(s => `
-        <span class="li">
-          <span class="sw" style="background:${s.color}"></span>${s.label}
-        </span>`).join('')}
-    </div>`).join('');
-}
-
 function buildUI() {
+  const pairBlocks = PAIRS.map((p, i) => `
+    <div class="pair-block">
+      <div class="pair-title">${p.title}</div>
+      <div class="pair-sub">${p.subtitle}</div>
+      <div class="legend">
+        ${p.sensors.map(s => `
+          <span class="li ${s.kas === 'Kas 3' ? 'kas3' : 'kas4'}">
+            <span class="sw" style="background:${s.color}"></span>
+            <strong>${s.kas}</strong> — ${s.id} (${s.height} cm)
+          </span>`).join('')}
+      </div>
+      <div class="chart-wrap"><canvas id="chart${i}"></canvas></div>
+    </div>
+  `).join('');
+
   document.getElementById('app').innerHTML = `
     <div class="controls">
       <div class="tabs">
@@ -134,14 +153,13 @@ function buildUI() {
         <button class="navbtn" id="next" onclick="go(1)">&#8250;</button>
       </div>
     </div>
-    <div class="legend-wrap">${buildLegend()}</div>
-    <div class="chart-wrap"><canvas id="c"></canvas></div>
+    ${pairBlocks}
     <div class="dots" id="dots"></div>
   `;
 
-  chart = new Chart(document.getElementById('c'), {
+  charts = PAIRS.map((p, i) => new Chart(document.getElementById('chart' + i), {
     type: 'line',
-    data: { datasets: mkDatasets(DAYS[dayIdx], 'temp') },
+    data: { datasets: mkDatasets(p, DAYS[dayIdx], 'temp') },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -170,7 +188,7 @@ function buildUI() {
         }
       }
     }
-  });
+  }));
 
   document.addEventListener('keydown', e => {
     if (e.key === 'ArrowLeft') go(-1);
