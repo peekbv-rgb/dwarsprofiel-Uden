@@ -7,12 +7,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const EXCEL_URL = process.env.EXCEL_URL || 'https://water-tech.cboost.nl/excel';
 
-const SENSOR_HEIGHTS = {
-  'VDB45': 29,
-  'VDB39': 100,
-  'VDB37': 130,
-  'VDB36': 207,
-  'VDB14': 283
+const SENSOR_INFO = {
+  'VDB45': { height: 29,  label: 'VDB45 — Kas 3, 29 cm' },
+  'VDB39': { height: 128, label: 'VDB39 — Kas 3, 128 cm' },
+  'VDB37': { height: 29,  label: 'VDB37 — Kas 4, 29 cm' },
+  'VDB36': { height: 128, label: 'VDB36 — Kas 4, 128 cm' },
+  'VDB14': { height: 184, label: 'VDB14 — Kas 4, 184 cm' }
 };
 
 let cache = null;
@@ -54,7 +54,7 @@ async function fetchAndParse() {
     cellNF: false,
     cellStyles: false,
     cellHTML: false,
-    sheets: Object.keys(SENSOR_HEIGHTS)
+    sheets: Object.keys(SENSOR_INFO)
   });
 
   const now = new Date();
@@ -65,7 +65,7 @@ async function fetchAndParse() {
 
   const result = {};
 
-  for (const [sensor, height] of Object.entries(SENSOR_HEIGHTS)) {
+  for (const [sensor, info] of Object.entries(SENSOR_INFO)) {
     if (!wb.Sheets[sensor]) { console.log('Missing:', sensor); continue; }
 
     const rows = XLSX.utils.sheet_to_json(wb.Sheets[sensor], { header: 1, raw: true });
@@ -80,15 +80,12 @@ async function fetchAndParse() {
       console.log(sensor, 'headers:', headers.slice(0, 5)); continue;
     }
 
-    if (rows[1]) {
-      console.log(sensor, 'row1 sample:', rows[1][tsIdx], typeof rows[1][tsIdx]);
-    }
+    if (rows[1]) console.log(sensor, 'row1:', rows[1][tsIdx], typeof rows[1][tsIdx]);
 
     const byDay = {};
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       if (!row || row[tsIdx] == null) continue;
-
       const ts = toDate(row[tsIdx]);
       if (!ts || isNaN(ts) || ts < cutoff) continue;
 
@@ -106,7 +103,7 @@ async function fetchAndParse() {
 
     for (const [day, vals] of Object.entries(byDay)) {
       if (!result[day]) result[day] = {};
-      result[day][sensor] = { height, ...vals };
+      result[day][sensor] = { height: info.height, label: info.label, ...vals };
     }
     console.log(sensor, 'OK:', Object.keys(byDay).length, 'days');
   }
