@@ -10,7 +10,7 @@
 body { font-family: Arial, sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
 h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; }
 .subtitle { font-size: 13px; color: #777; margin-bottom: 24px; text-align: center; }
-.card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); width: 100%; max-width: 1000px; margin-bottom: 16px; }
+.card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); width: 100%; max-width: 1100px; margin-bottom: 16px; }
 .status { font-size: 12px; color: #aaa; text-align: right; margin-bottom: 12px; }
 .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
 .tabs { display: flex; gap: 6px; }
@@ -21,7 +21,7 @@ h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; 
 .navbtn:hover:not(:disabled) { background: #f0f0f0; }
 .navbtn:disabled { opacity: 0.3; cursor: default; }
 .daytitle { font-size: 16px; font-weight: 600; min-width: 130px; text-align: center; }
-.pair-block { margin-bottom: 28px; }
+.pair-block { margin-bottom: 36px; }
 .pair-block:last-child { margin-bottom: 0; }
 .pair-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: #333; }
 .pair-sub { font-size: 12px; color: #888; margin-bottom: 10px; }
@@ -30,7 +30,7 @@ h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; 
 .li.kas3 { background: #fdecea; color: #b71c1c; }
 .li.kas4 { background: #e8f5e9; color: #1b5e20; }
 .sw { width: 22px; height: 3px; display: inline-block; border-radius: 2px; }
-.chart-wrap { position: relative; width: 100%; height: 260px; }
+.chart-wrap { position: relative; width: 100%; height: 420px; }
 .dots { text-align: center; font-size: 12px; color: #bbb; margin-top: 10px; letter-spacing: 3px; }
 .loading { text-align: center; padding: 60px; color: #888; font-size: 14px; }
 .error { text-align: center; padding: 40px; color: #c0392b; font-size: 14px; background: #fdf0f0; border-radius: 8px; }
@@ -39,6 +39,7 @@ h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; 
 @media (max-width: 600px) {
   .nav { margin-left: 0; width: 100%; justify-content: center; }
   .controls { flex-direction: column; align-items: flex-start; }
+  .chart-wrap { height: 320px; }
 }
 </style>
 </head>
@@ -67,56 +68,4 @@ const PAIRS = [
     subtitle: 'Vergelijking op 128 cm hoogte',
     sensors: [
       { id: 'VDB39', kas: 'Kas 3', height: 128, color: '#D32F2F' },
-      { id: 'VDB36', kas: 'Kas 4', height: 128, color: '#2E7D32' }
-    ]
-  },
-  {
-    title: 'Apart: VDB14 (Kas 4, 184 cm)',
-    subtitle: 'Hoogste sensor — alleen Kas 4',
-    sensors: [
-      { id: 'VDB14', kas: 'Kas 4', height: 184, color: '#2E7D32' }
-    ]
-  }
-];
-
-let DATA = null, DAYS = [], dayIdx = 0, mode = 'temp', charts = [];
-
-function fmtDay(d) {
-  if (!d) return '';
-  const p = d.split('-');
-  const mn = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][+p[1]-1];
-  return p[2] + ' ' + mn + ' ' + p[0];
-}
-
-function mkLabel(h) {
-  const hr = Math.floor(h), mn = Math.round((h - hr) * 60);
-  return hr.toString().padStart(2,'0') + ':' + mn.toString().padStart(2,'0');
-}
-
-function mkDatasets(pair, day, m) {
-  return pair.sensors.map(s => {
-    const d = DATA[day] && DATA[day][s.id];
-    if (!d || !d.hrs.length) return { label: s.id, data: [], borderColor: s.color, borderWidth: 2, pointRadius: 0 };
-    // Sort by hour for proper line rendering
-    const pts = d.hrs.map((h, j) => ({ x: h, y: d[m][j] })).sort((a, b) => a.x - b.x);
-    return {
-      label: `${s.id} — ${s.kas} (${s.height} cm)`,
-      data: pts,
-      borderColor: s.color,
-      backgroundColor: s.color + '20',
-      borderWidth: 2.2,
-      pointRadius: 0,
-      tension: 0.2,
-      spanGaps: false,
-      fill: false
-    };
-  });
-}
-
-function render() {
-  const day = DAYS[dayIdx];
-  document.getElementById('dtitle').textContent = fmtDay(day);
-  document.getElementById('prev').disabled = dayIdx === 0;
-  document.getElementById('next').disabled = dayIdx === DAYS.length - 1;
-  document.getElementById('dots').textContent = DAYS.map((_, i) => i === dayIdx ? '●' : '·').join(' ');
-  charts.forEach((chart, i) => {
+      { id:
