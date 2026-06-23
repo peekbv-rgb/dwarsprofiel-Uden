@@ -27,8 +27,8 @@ h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; 
 .pair-sub { font-size: 12px; color: #888; margin-bottom: 10px; }
 .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; font-size: 12px; }
 .li { display: flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 4px; }
-.li.kas3 { background: #e8f5e9; color: #1b5e20; }
-.li.kas4 { background: #e3f2fd; color: #0d47a1; }
+.li.kas3 { background: #fdecea; color: #b71c1c; }
+.li.kas4 { background: #e8f5e9; color: #1b5e20; }
 .sw { width: 22px; height: 3px; display: inline-block; border-radius: 2px; }
 .chart-wrap { position: relative; width: 100%; height: 260px; }
 .dots { text-align: center; font-size: 12px; color: #bbb; margin-top: 10px; letter-spacing: 3px; }
@@ -45,7 +45,7 @@ h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; 
 <body>
 
 <h1>Vergelijking Kas 3 vs Kas 4</h1>
-<p class="subtitle">Temperatuur &amp; luchtvochtigheid — Kas 3 (groen) vs Kas 4 (blauw)</p>
+<p class="subtitle">Temperatuur &amp; luchtvochtigheid — Kas 3 (rood) vs Kas 4 (groen)</p>
 
 <div class="card">
   <div class="status" id="status">Laden...</div>
@@ -58,23 +58,23 @@ const PAIRS = [
     title: 'Paar 1: Laag (29 cm) — VDB45 (Kas 3) ↔ VDB37 (Kas 4)',
     subtitle: 'Vergelijking op 29 cm hoogte',
     sensors: [
-      { id: 'VDB45', kas: 'Kas 3', height: 29, color: '#1D9E75' },
-      { id: 'VDB37', kas: 'Kas 4', height: 29, color: '#1976D2' }
+      { id: 'VDB45', kas: 'Kas 3', height: 29, color: '#D32F2F' },
+      { id: 'VDB37', kas: 'Kas 4', height: 29, color: '#2E7D32' }
     ]
   },
   {
     title: 'Paar 2: Midden (128 cm) — VDB39 (Kas 3) ↔ VDB36 (Kas 4)',
     subtitle: 'Vergelijking op 128 cm hoogte',
     sensors: [
-      { id: 'VDB39', kas: 'Kas 3', height: 128, color: '#1D9E75' },
-      { id: 'VDB36', kas: 'Kas 4', height: 128, color: '#1976D2' }
+      { id: 'VDB39', kas: 'Kas 3', height: 128, color: '#D32F2F' },
+      { id: 'VDB36', kas: 'Kas 4', height: 128, color: '#2E7D32' }
     ]
   },
   {
     title: 'Apart: VDB14 (Kas 4, 184 cm)',
     subtitle: 'Hoogste sensor — alleen Kas 4',
     sensors: [
-      { id: 'VDB14', kas: 'Kas 4', height: 184, color: '#7B52CC' }
+      { id: 'VDB14', kas: 'Kas 4', height: 184, color: '#2E7D32' }
     ]
   }
 ];
@@ -97,9 +97,11 @@ function mkDatasets(pair, day, m) {
   return pair.sensors.map(s => {
     const d = DATA[day] && DATA[day][s.id];
     if (!d || !d.hrs.length) return { label: s.id, data: [], borderColor: s.color, borderWidth: 2, pointRadius: 0 };
+    // Sort by hour for proper line rendering
+    const pts = d.hrs.map((h, j) => ({ x: h, y: d[m][j] })).sort((a, b) => a.x - b.x);
     return {
       label: `${s.id} — ${s.kas} (${s.height} cm)`,
-      data: d.hrs.map((h, j) => ({ x: h, y: d[m][j] })),
+      data: pts,
       borderColor: s.color,
       backgroundColor: s.color + '20',
       borderWidth: 2.2,
@@ -118,128 +120,3 @@ function render() {
   document.getElementById('next').disabled = dayIdx === DAYS.length - 1;
   document.getElementById('dots').textContent = DAYS.map((_, i) => i === dayIdx ? '●' : '·').join(' ');
   charts.forEach((chart, i) => {
-    chart.data.datasets = mkDatasets(PAIRS[i], day, mode);
-    chart.options.scales.y.title.text = mode === 'temp' ? 'Temperatuur (°C)' : 'Luchtvochtigheid (%)';
-    chart.update('none');
-  });
-}
-
-function go(d) { dayIdx = Math.max(0, Math.min(DAYS.length - 1, dayIdx + d)); render(); }
-function setMode(m, btn) {
-  mode = m;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-  btn.classList.add('on');
-  render();
-}
-
-function buildUI() {
-  const pairBlocks = PAIRS.map((p, i) => `
-    <div class="pair-block">
-      <div class="pair-title">${p.title}</div>
-      <div class="pair-sub">${p.subtitle}</div>
-      <div class="legend">
-        ${p.sensors.map(s => `
-          <span class="li ${s.kas === 'Kas 3' ? 'kas3' : 'kas4'}">
-            <span class="sw" style="background:${s.color}"></span>
-            <strong>${s.kas}</strong> — ${s.id} (${s.height} cm)
-          </span>`).join('')}
-      </div>
-      <div class="chart-wrap"><canvas id="chart${i}"></canvas></div>
-    </div>
-  `).join('');
-
-  document.getElementById('app').innerHTML = `
-    <div class="controls">
-      <div class="tabs">
-        <button class="tab on" onclick="setMode('temp',this)">Temperatuur (°C)</button>
-        <button class="tab" onclick="setMode('hum',this)">Luchtvochtigheid (%)</button>
-      </div>
-      <div class="nav">
-        <button class="navbtn" id="prev" onclick="go(-1)">&#8249;</button>
-        <span class="daytitle" id="dtitle"></span>
-        <button class="navbtn" id="next" onclick="go(1)">&#8250;</button>
-      </div>
-    </div>
-    ${pairBlocks}
-    <div class="dots" id="dots"></div>
-  `;
-
-  charts = PAIRS.map((p, i) => new Chart(document.getElementById('chart' + i), {
-    type: 'line',
-    data: { datasets: mkDatasets(p, DAYS[dayIdx], 'temp') },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: items => '🕐 ' + mkLabel(items[0].parsed.x),
-            label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + (mode === 'temp' ? ' °C' : ' %')
-          }
-        }
-      },
-      scales: {
-        x: {
-          type: 'linear', min: 0, max: 24,
-          ticks: { stepSize: 2, callback: v => v + 'u', color: '#888' },
-          grid: { color: 'rgba(0,0,0,0.06)' },
-          title: { display: true, text: 'Tijd van de dag', color: '#888', font: { size: 11 } }
-        },
-        y: {
-          ticks: { color: '#888' },
-          grid: { color: 'rgba(0,0,0,0.06)' },
-          title: { display: true, text: 'Temperatuur (°C)', color: '#888', font: { size: 12 } }
-        }
-      }
-    }
-  }));
-
-  document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowLeft') go(-1);
-    if (e.key === 'ArrowRight') go(1);
-  });
-
-  render();
-}
-
-async function loadData() {
-  try {
-    const res = await fetch('/api/data');
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error);
-
-    DATA = json.data;
-    DAYS = Object.keys(DATA).sort();
-
-    if (DAYS.length === 0) {
-      document.getElementById('app').innerHTML =
-        `<div class="error">⚠️ Geen data gevonden voor de afgelopen 14 dagen.<br>
-         <small>Mogelijk worden timestamps niet correct gelezen uit de Excel.</small><br><br>
-         <button class="refresh-btn" onclick="loadData()" style="font-size:14px;padding:8px 16px">Opnieuw proberen</button></div>`;
-      document.getElementById('status').textContent = 'Geen recente data';
-      return;
-    }
-
-    dayIdx = Math.max(0, DAYS.length - 2);
-
-    const fetched = new Date(json.fetched);
-    document.getElementById('status').innerHTML =
-      `Laatste update: ${fetched.toLocaleString('nl-NL')} &nbsp;
-       <button class="refresh-btn" onclick="loadData()">↻ Vernieuwen</button>`;
-
-    buildUI();
-  } catch (err) {
-    document.getElementById('app').innerHTML =
-      `<div class="error">❌ ${err.message}<br><br>
-       <button class="refresh-btn" onclick="loadData()" style="font-size:14px;padding:8px 16px">Opnieuw proberen</button></div>`;
-    document.getElementById('status').textContent = 'Laden mislukt';
-  }
-}
-
-loadData();
-</script>
-</body>
-</html>
