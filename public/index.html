@@ -94,14 +94,30 @@ function mkLabel(h) {
   return hr.toString().padStart(2,'0') + ':' + mn.toString().padStart(2,'0');
 }
 
+// Linear interpolation of value y at given x using sorted points
+function interpolate(pts, x) {
+  if (!pts || pts.length === 0) return null;
+  if (x <= pts[0].x) return pts[0].y;
+  if (x >= pts[pts.length-1].x) return pts[pts.length-1].y;
+  for (let i = 1; i < pts.length; i++) {
+    if (pts[i].x >= x) {
+      const a = pts[i-1], b = pts[i];
+      const t = (x - a.x) / (b.x - a.x);
+      return a.y + t * (b.y - a.y);
+    }
+  }
+  return null;
+}
+
 function mkDatasets(pair, day, m) {
   return pair.sensors.map(s => {
     const d = DATA[day] && DATA[day][s.id];
-    if (!d || !d.hrs.length) return { label: s.id, data: [], borderColor: s.color, borderWidth: 2, pointRadius: 0 };
+    if (!d || !d.hrs.length) return { label: s.id, data: [], borderColor: s.color, borderWidth: 2, pointRadius: 0, _pts: [] };
     const pts = d.hrs.map((h, j) => ({ x: h, y: d[m][j] })).sort((a, b) => a.x - b.x);
     return {
       label: `${s.id} — ${s.kas} (${s.height} cm)`,
       data: pts,
+      _pts: pts,
       borderColor: s.color,
       backgroundColor: s.color + '20',
       borderWidth: 2.2,
@@ -166,6 +182,14 @@ function buildUI() {
     <div class="dots" id="dots"></div>
   `;
 
+  // Custom tooltip plugin that uses interpolated values at the hovered x
+  const xTooltip = {
+    id: 'xtooltip',
+    afterEvent(chart, args) {
+      // no-op, we just rely on the external handler
+    }
+  };
+
   charts = PAIRS.map((p, i) => new Chart(document.getElementById('chart' + i), {
     type: 'line',
     data: { datasets: mkDatasets(p, DAYS[dayIdx], 'temp') },
@@ -173,13 +197,42 @@ function buildUI() {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
-      interaction: { mode: 'index', intersect: false },
+      interaction: { mode: 'nearest', axis: 'x', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: {
+          enabled: true,
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false,
           callbacks: {
-            title: items => '🕐 ' + mkLabel(items[0].parsed.x),
-            label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + (mode === 'temp' ? ' °C' : ' %')
+            // Use the X of the first hovered point as the unified time
+            title: (items) => {
+              if (!items.length) return '';
+              const x = items[0].parsed.x;
+              return '🕐 ' + mkLabel(x);
+            },
+            // For every dataset in this chart, interpolate at that same X
+            label: (item) => {
+              const chart = item.chart;
+              const x = item.parsed.x;
+              // For the first item, return all datasets at once via afterBody
+              return null;
+            },
+            beforeBody: (items) => {
+              if (!items.length) return [];
+              const chart = items[0].chart;
+              const x = items[0].parsed.x;
+              const lines = [];
+              chart.data.datasets.forEach(ds => {
+                const y = interpolate(ds._pts, x);
+                if (y !== null) {
+                  lines.push(ds.label + ': ' + y.toFixed(1) + (mode === 'temp' ? ' °C' : ' %'));
+                }
+              });
+              return lines;
+            },
+            label: () => '' // suppress default per-dataset label
           }
         }
       },
@@ -221,7 +274,6 @@ async function loadData() {
     if (DAYS.length === 0) {
       document.getElementById('app').innerHTML =
         `<div class="error">⚠️ Geen data gevonden voor de afgelopen 14 dagen.<br>
-         <small>Mogelijk worden timestamps niet correct gelezen uit de Excel.</small><br><br>
          <button class="refresh-btn" onclick="loadData()" style="font-size:14px;padding:8px 16px">Opnieuw proberen</button></div>`;
       document.getElementById('status').textContent = 'Geen recente data';
       return;
