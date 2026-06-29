@@ -320,8 +320,19 @@ function buildVDChart() {
       if (rh >= 0 && rh <= 100) pts.push({ x: T, y: rh });
     }
     if (pts.length > 1) {
-      datasets.push({ label: 'VD = ' + vd, data: pts, borderColor: VD_COLORS[vd] || '#888',
-        borderWidth: vd === VD_THRESHOLD ? 3 : 1.4, pointRadius: 0, tension: 0.3, fill: false, _isoline: true });
+      datasets.push({
+        label: 'VD = ' + vd,
+        data: pts,
+        borderColor: VD_COLORS[vd] || '#888',
+        backgroundColor: VD_COLORS[vd] || '#888',
+        borderWidth: vd === VD_THRESHOLD ? 3 : 1.4,
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        tension: 0.3,
+        fill: false,
+        showLine: true,
+        _isoline: true
+      });
     }
   }
   const lastDay = DAYS[DAYS.length - 1];
@@ -338,13 +349,22 @@ function buildVDChart() {
     let latestIdx = 0;
     for (let i = 1; i < d.hrs.length; i++) if (d.hrs[i] > d.hrs[latestIdx]) latestIdx = i;
     const T = d.temp[latestIdx], RH = d.hum[latestIdx];
-    datasets.push({ label: sm.label + ' (laatste meting)', data: [{ x: T, y: RH }],
-      borderColor: sm.color, backgroundColor: sm.color, pointRadius: 7, pointHoverRadius: 9,
-      pointStyle: sm.shape, showLine: false });
+    datasets.push({
+      label: sm.label + ' (laatste meting)',
+      data: [{ x: T, y: RH }],
+      borderColor: sm.color,
+      backgroundColor: sm.color,
+      pointRadius: 8,
+      pointHoverRadius: 10,
+      pointStyle: sm.shape,
+      showLine: false
+    });
   }
   return new Chart(document.getElementById('vdChart'), {
-    type: 'scatter', data: { datasets },
-    options: { responsive: true, maintainAspectRatio: false, animation: false,
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
       plugins: {
         legend: { display: true, position: 'right', labels: { font: { size: 10 }, boxWidth: 14 } },
         tooltip: { callbacks: { label: ctx => {
