@@ -37,8 +37,16 @@ h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; 
 .refresh-btn { padding: 5px 12px; border: 1px solid #ccc; border-radius: 6px; background: transparent; color: #555; cursor: pointer; font-size: 12px; margin-left: 8px; }
 .refresh-btn:hover { background: #f5f5f5; }
 .section-title { font-size: 18px; font-weight: 700; margin: 8px 0 18px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 8px; }
-.vd-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-.vd-card { padding: 14px 18px; border-radius: 8px; }
+.vd-headline { background: linear-gradient(135deg, #e8f5e9 0%, #fff 100%); border-left: 5px solid #2E7D32; padding: 18px 22px; border-radius: 8px; margin: 16px 0 24px; }
+.vd-headline.neg { background: linear-gradient(135deg, #fdecea 0%, #fff 100%); border-left-color: #D32F2F; }
+.vd-headline-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 6px; }
+.vd-headline-big { font-size: 32px; font-weight: 700; line-height: 1.1; }
+.vd-headline-big.pos { color: #1b5e20; }
+.vd-headline-big.neg { color: #b71c1c; }
+.vd-headline-sub { font-size: 13px; color: #555; margin-top: 6px; }
+.vd-headline-detail { font-size: 12px; color: #777; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; }
+.vd-pair-row { display: flex; gap: 14px; margin-bottom: 10px; flex-wrap: wrap; }
+.vd-card { padding: 14px 18px; border-radius: 8px; flex: 1; min-width: 220px; }
 .vd-card.kas3 { background: #fdecea; border: 1px solid #f5c6cb; }
 .vd-card.kas4 { background: #e8f5e9; border: 1px solid #c8e6c9; }
 .vd-card h3 { font-size: 14px; margin-bottom: 8px; }
@@ -48,21 +56,19 @@ h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; 
 .vd-big.kas3 { color: #b71c1c; }
 .vd-big.kas4 { color: #1b5e20; }
 .vd-sub { font-size: 12px; color: #666; margin-top: 4px; }
-.vd-pair-row { display: flex; gap: 14px; margin-bottom: 10px; flex-wrap: wrap; }
-.vd-pair-row .vd-card { flex: 1; min-width: 220px; }
 .daily-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
 .daily-table th, .daily-table td { padding: 6px 10px; text-align: right; border-bottom: 1px solid #eee; }
 .daily-table th { background: #f7f7f7; font-weight: 600; color: #555; text-align: center; }
 .daily-table td:first-child { text-align: left; font-weight: 500; }
 .daily-table .pct-kas3 { color: #b71c1c; font-weight: 600; }
 .daily-table .pct-kas4 { color: #1b5e20; font-weight: 600; }
-.daily-table .diff-pos { color: #1b5e20; }
-.daily-table .diff-neg { color: #b71c1c; }
+.daily-table .diff-pos { color: #1b5e20; font-weight: 600; }
+.daily-table .diff-neg { color: #b71c1c; font-weight: 600; }
 @media (max-width: 600px) {
   .nav { margin-left: 0; width: 100%; justify-content: center; }
   .controls { flex-direction: column; align-items: flex-start; }
   .chart-wrap { height: 320px; }
-  .vd-stats { grid-template-columns: 1fr; }
+  .vd-headline-big { font-size: 26px; }
 }
 </style>
 </head>
@@ -78,43 +84,26 @@ h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; 
 
 <script>
 const PAIRS = [
-  {
-    title: 'Paar 1: Laag (29 cm) — VDB45 (Kas 3) ↔ VDB37 (Kas 4)',
-    subtitle: 'Vergelijking op 29 cm hoogte',
+  { title: 'Paar 1: Laag (29 cm) — VDB45 (Kas 3) ↔ VDB37 (Kas 4)', subtitle: 'Vergelijking op 29 cm hoogte',
     sensors: [
       { id: 'VDB45', kas: 'Kas 3', height: 29, color: '#D32F2F', dash: [] },
-      { id: 'VDB37', kas: 'Kas 4', height: 29, color: '#2E7D32', dash: [] }
-    ]
-  },
-  {
-    title: 'Paar 2: Midden (128 cm) — VDB39 (Kas 3) ↔ VDB36 (Kas 4)',
-    subtitle: 'Vergelijking op 128 cm hoogte',
+      { id: 'VDB37', kas: 'Kas 4', height: 29, color: '#2E7D32', dash: [] } ] },
+  { title: 'Paar 2: Midden (128 cm) — VDB39 (Kas 3) ↔ VDB36 (Kas 4)', subtitle: 'Vergelijking op 128 cm hoogte',
     sensors: [
       { id: 'VDB39', kas: 'Kas 3', height: 128, color: '#D32F2F', dash: [] },
-      { id: 'VDB36', kas: 'Kas 4', height: 128, color: '#2E7D32', dash: [] }
-    ]
-  },
-  {
-    title: 'Apart: VDB14 (Kas 4, 184 cm)',
-    subtitle: 'Hoogste sensor — alleen Kas 4',
-    sensors: [
-      { id: 'VDB14', kas: 'Kas 4', height: 184, color: '#2E7D32', dash: [] }
-    ]
-  },
-  {
-    title: 'Overzicht: Alle sensoren samen',
-    subtitle: 'Kas 3 in roodtinten, Kas 4 in groentinten',
+      { id: 'VDB36', kas: 'Kas 4', height: 128, color: '#2E7D32', dash: [] } ] },
+  { title: 'Apart: VDB14 (Kas 4, 184 cm)', subtitle: 'Hoogste sensor — alleen Kas 4',
+    sensors: [ { id: 'VDB14', kas: 'Kas 4', height: 184, color: '#2E7D32', dash: [] } ] },
+  { title: 'Overzicht: Alle sensoren samen', subtitle: 'Kas 3 in roodtinten, Kas 4 in groentinten',
     sensors: [
       { id: 'VDB45', kas: 'Kas 3', height: 29,  color: '#EF5350', dash: [] },
       { id: 'VDB39', kas: 'Kas 3', height: 128, color: '#B71C1C', dash: [6,3] },
       { id: 'VDB37', kas: 'Kas 4', height: 29,  color: '#66BB6A', dash: [] },
       { id: 'VDB36', kas: 'Kas 4', height: 128, color: '#1B5E20', dash: [6,3] },
-      { id: 'VDB14', kas: 'Kas 4', height: 184, color: '#004D40', dash: [2,3] }
-    ]
-  }
+      { id: 'VDB14', kas: 'Kas 4', height: 184, color: '#004D40', dash: [2,3] } ] }
 ];
 
-const VD_THRESHOLD = 10; // g/m³
+const VD_THRESHOLD = 10;
 
 let DATA = null, DAYS = [], dayIdx = 0, mode = 'temp', charts = [];
 
@@ -130,12 +119,10 @@ function fmtDayShort(d) {
   const mn = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][+p[1]-1];
   return p[2] + ' ' + mn;
 }
-
 function mkLabel(h) {
   const hr = Math.floor(h), mn = Math.round((h - hr) * 60);
   return hr.toString().padStart(2,'0') + ':' + mn.toString().padStart(2,'0');
 }
-
 function interpolate(pts, x) {
   if (!pts || pts.length === 0) return null;
   if (x <= pts[0].x) return pts[0].y;
@@ -149,61 +136,42 @@ function interpolate(pts, x) {
   }
   return null;
 }
-
-// Vochtdeficiet in g/m³ uit temperatuur (°C) en RV (%)
 function vd_gm3(T, RH) {
   if (T == null || RH == null || isNaN(T) || isNaN(RH)) return null;
   const es_kPa = 0.6108 * Math.exp(17.27 * T / (T + 237.3));
   const ea_kPa = es_kPa * RH / 100;
-  const es_hPa = es_kPa * 10;
-  const ea_hPa = ea_kPa * 10;
-  const ah_sat = 216.7 * es_hPa / (T + 273.15);
-  const ah_act = 216.7 * ea_hPa / (T + 273.15);
+  const ah_sat = 216.7 * es_kPa * 10 / (T + 273.15);
+  const ah_act = 216.7 * ea_kPa * 10 / (T + 273.15);
   return ah_sat - ah_act;
 }
-
 function legendSwatch(color, dash) {
   const dashAttr = dash && dash.length ? ` stroke-dasharray="${dash.join(' ')}"` : '';
   return `<svg class="sw" viewBox="0 0 28 10" preserveAspectRatio="none">
-    <line x1="0" y1="5" x2="28" y2="5" stroke="${color}" stroke-width="2.5"${dashAttr} stroke-linecap="round"/>
-  </svg>`;
+    <line x1="0" y1="5" x2="28" y2="5" stroke="${color}" stroke-width="2.5"${dashAttr} stroke-linecap="round"/></svg>`;
 }
-
 function mkDatasets(pair, day, m) {
   return pair.sensors.map(s => {
     const d = DATA[day] && DATA[day][s.id];
     if (!d || !d.hrs.length) return { label: s.id, data: [], borderColor: s.color, borderWidth: 2, pointRadius: 0, _pts: [] };
     const pts = d.hrs.map((h, j) => ({ x: h, y: d[m][j] })).sort((a, b) => a.x - b.x);
-    return {
-      label: `${s.id} — ${s.kas} (${s.height} cm)`,
-      data: pts,
-      _pts: pts,
-      borderColor: s.color,
-      backgroundColor: s.color + '20',
-      borderWidth: 2,
-      borderDash: s.dash || [],
-      pointRadius: 0,
-      tension: 0.2,
-      spanGaps: false,
-      fill: false
-    };
+    return { label: `${s.id} — ${s.kas} (${s.height} cm)`, data: pts, _pts: pts,
+      borderColor: s.color, backgroundColor: s.color + '20', borderWidth: 2,
+      borderDash: s.dash || [], pointRadius: 0, tension: 0.2, spanGaps: false, fill: false };
   });
 }
 
-// Compute % of time below VD threshold for one sensor over a list of days
-function pctBelowThreshold(sensorId, days) {
+// Returns { totalHours, belowHours, pct }
+function timeBelowThreshold(sensorId, days) {
   let total = 0, below = 0;
   for (const day of days) {
     const d = DATA[day] && DATA[day][sensorId];
     if (!d || !d.hrs.length) continue;
-    // Sort by time
     const idx = d.hrs.map((_, i) => i).sort((a, b) => d.hrs[a] - d.hrs[b]);
     for (let k = 0; k < idx.length; k++) {
       const i = idx[k];
       const T = d.temp[i], RH = d.hum[i];
       const vd = vd_gm3(T, RH);
       if (vd == null) continue;
-      // Weight by time interval (trapezoidal): use gap to next sample
       let weight = 1;
       if (k < idx.length - 1) {
         const j = idx[k+1];
@@ -216,91 +184,113 @@ function pctBelowThreshold(sensorId, days) {
       if (vd < VD_THRESHOLD) below += weight;
     }
   }
-  return total > 0 ? (below / total) * 100 : null;
+  return { totalHours: total, belowHours: below, pct: total > 0 ? (below/total)*100 : null };
 }
+function pctBelowThreshold(sensorId, days) { return timeBelowThreshold(sensorId, days).pct; }
+function dailyPct(sensorId, day) { return pctBelowThreshold(sensorId, [day]); }
 
-function dailyPct(sensorId, day) {
-  return pctBelowThreshold(sensorId, [day]);
+function fmtHours(h) {
+  if (h == null) return '–';
+  if (h < 1) return (h * 60).toFixed(0) + ' min';
+  return h.toFixed(1) + ' uur';
 }
 
 function buildVDSection() {
-  // Pairs for VD comparison (same height pairs only)
   const vdPairs = [
-    { name: 'Laag (29 cm)',   k3: 'VDB45', k4: 'VDB37' },
+    { name: 'Laag (29 cm)',    k3: 'VDB45', k4: 'VDB37' },
     { name: 'Midden (128 cm)', k3: 'VDB39', k4: 'VDB36' }
   ];
 
   let html = `<div class="section-title">Vochtdeficiet (VD) analyse — % van de tijd onder VD = ${VD_THRESHOLD} g/m³</div>`;
   html += `<div style="font-size:12px;color:#777;margin-bottom:14px">VD berekend uit temperatuur en luchtvochtigheid (Magnus-formule). Een lage VD betekent vochtige lucht.</div>`;
 
-  // Overall summary over all 14 days
-  html += `<div style="font-size:14px;font-weight:600;margin-bottom:10px">Totaal over ${DAYS.length} dagen</div>`;
+  // === HEADLINE: Hour difference for middle sensor (128 cm) ===
+  const midK3 = timeBelowThreshold('VDB39', DAYS);
+  const midK4 = timeBelowThreshold('VDB36', DAYS);
+  const hourDiff = (midK3.belowHours != null && midK4.belowHours != null)
+    ? midK4.belowHours - midK3.belowHours : null;
+  const isPos = hourDiff != null && hourDiff > 0;
+  const isNeg = hourDiff != null && hourDiff < 0;
+
+  if (hourDiff != null) {
+    const absH = Math.abs(hourDiff);
+    const perDay = absH / DAYS.length;
+    html += `<div class="vd-headline ${isNeg ? 'neg' : ''}">
+      <div class="vd-headline-label">Midden-sensor (128 cm) — over ${DAYS.length} dagen</div>
+      <div class="vd-headline-big ${isPos ? 'pos' : (isNeg ? 'neg' : '')}">
+        ${isPos ? 'Kas 4 zit ' + fmtHours(absH) + ' langer onder VD ' + VD_THRESHOLD + ' dan Kas 3'
+          : (isNeg ? 'Kas 3 zit ' + fmtHours(absH) + ' langer onder VD ' + VD_THRESHOLD + ' dan Kas 4'
+          : 'Beide kassen even lang onder VD ' + VD_THRESHOLD)}
+      </div>
+      <div class="vd-headline-sub">
+        Gemiddeld <strong>${fmtHours(perDay)}/dag</strong> ${isPos ? 'meer in Kas 4' : (isNeg ? 'meer in Kas 3' : '')}
+      </div>
+      <div class="vd-headline-detail">
+        Kas 3 (VDB39): <strong>${fmtHours(midK3.belowHours)}</strong> onder VD ${VD_THRESHOLD} van totaal ${fmtHours(midK3.totalHours)} (${midK3.pct.toFixed(1)}%)<br>
+        Kas 4 (VDB36): <strong>${fmtHours(midK4.belowHours)}</strong> onder VD ${VD_THRESHOLD} van totaal ${fmtHours(midK4.totalHours)} (${midK4.pct.toFixed(1)}%)
+      </div>
+    </div>`;
+  }
+
+  // Per-pair overview
+  html += `<div style="font-size:14px;font-weight:600;margin-bottom:10px">Beide hoogtes — totaal over ${DAYS.length} dagen</div>`;
   for (const vp of vdPairs) {
-    const p3 = pctBelowThreshold(vp.k3, DAYS);
-    const p4 = pctBelowThreshold(vp.k4, DAYS);
-    const diff = (p4 != null && p3 != null) ? (p4 - p3) : null;
+    const r3 = timeBelowThreshold(vp.k3, DAYS);
+    const r4 = timeBelowThreshold(vp.k4, DAYS);
+    const dPct = (r4.pct != null && r3.pct != null) ? (r4.pct - r3.pct) : null;
+    const dHrs = (r4.belowHours != null && r3.belowHours != null) ? (r4.belowHours - r3.belowHours) : null;
     html += `<div style="margin-bottom:14px">
       <div style="font-size:13px;font-weight:500;margin-bottom:6px;color:#555">${vp.name}</div>
       <div class="vd-pair-row">
         <div class="vd-card kas3">
           <h3>Kas 3 — ${vp.k3}</h3>
-          <div class="vd-big kas3">${p3 != null ? p3.toFixed(1) : '–'}%</div>
-          <div class="vd-sub">van de tijd onder VD ${VD_THRESHOLD}</div>
+          <div class="vd-big kas3">${r3.pct != null ? r3.pct.toFixed(1) : '–'}%</div>
+          <div class="vd-sub">${fmtHours(r3.belowHours)} onder VD ${VD_THRESHOLD}</div>
         </div>
         <div class="vd-card kas4">
           <h3>Kas 4 — ${vp.k4}</h3>
-          <div class="vd-big kas4">${p4 != null ? p4.toFixed(1) : '–'}%</div>
-          <div class="vd-sub">van de tijd onder VD ${VD_THRESHOLD}</div>
+          <div class="vd-big kas4">${r4.pct != null ? r4.pct.toFixed(1) : '–'}%</div>
+          <div class="vd-sub">${fmtHours(r4.belowHours)} onder VD ${VD_THRESHOLD}</div>
         </div>
       </div>
-      ${diff != null ? `<div style="font-size:13px;color:#555">
-        Verschil: <strong style="color:${diff > 0 ? '#1b5e20' : (diff < 0 ? '#b71c1c' : '#555')}">${diff > 0 ? '+' : ''}${diff.toFixed(1)} procentpunt</strong>
-        ${diff > 0 ? '— Kas 4 zit vaker onder de drempel (vochtiger klimaat)' : (diff < 0 ? '— Kas 3 zit vaker onder de drempel (vochtiger klimaat)' : '')}
+      ${dPct != null ? `<div style="font-size:13px;color:#555">
+        Verschil: <strong style="color:${dPct > 0 ? '#1b5e20' : (dPct < 0 ? '#b71c1c' : '#555')}">${dPct > 0 ? '+' : ''}${dPct.toFixed(1)} pp (${dHrs > 0 ? '+' : ''}${fmtHours(Math.abs(dHrs))})</strong>
+        ${dPct > 0 ? '— Kas 4 vaker vochtig' : (dPct < 0 ? '— Kas 3 vaker vochtig' : '')}
       </div>` : ''}
     </div>`;
   }
 
-  // Daily breakdown table
-  html += `<div style="font-size:14px;font-weight:600;margin:20px 0 8px">Per dag uitgesplitst</div>`;
+  // Daily table
+  html += `<div style="font-size:14px;font-weight:600;margin:20px 0 8px">Per dag uitgesplitst (midden — 128 cm)</div>`;
   html += `<div style="overflow-x:auto"><table class="daily-table">
-    <thead>
-      <tr>
-        <th rowspan="2">Datum</th>
-        <th colspan="3">Laag — 29 cm</th>
-        <th colspan="3">Midden — 128 cm</th>
-      </tr>
-      <tr>
-        <th>Kas 3<br>(VDB45)</th>
-        <th>Kas 4<br>(VDB37)</th>
-        <th>Δ</th>
-        <th>Kas 3<br>(VDB39)</th>
-        <th>Kas 4<br>(VDB36)</th>
-        <th>Δ</th>
-      </tr>
-    </thead><tbody>`;
+    <thead><tr>
+      <th>Datum</th>
+      <th>Kas 3<br>(VDB39)</th>
+      <th>Kas 4<br>(VDB36)</th>
+      <th>Δ %</th>
+      <th>Uren Kas 3</th>
+      <th>Uren Kas 4</th>
+      <th>Δ uur</th>
+    </tr></thead><tbody>`;
 
-  // Show days newest first
   const sortedDays = [...DAYS].sort().reverse();
   for (const day of sortedDays) {
-    const p3a = dailyPct('VDB45', day);
-    const p4a = dailyPct('VDB37', day);
-    const p3b = dailyPct('VDB39', day);
-    const p4b = dailyPct('VDB36', day);
-    const da = (p4a != null && p3a != null) ? (p4a - p3a) : null;
-    const db = (p4b != null && p3b != null) ? (p4b - p3b) : null;
+    const r3 = timeBelowThreshold('VDB39', [day]);
+    const r4 = timeBelowThreshold('VDB36', [day]);
+    const dPct = (r3.pct != null && r4.pct != null) ? (r4.pct - r3.pct) : null;
+    const dHrs = (r3.belowHours != null && r4.belowHours != null) ? (r4.belowHours - r3.belowHours) : null;
     html += `<tr>
       <td>${fmtDayShort(day)}</td>
-      <td class="pct-kas3">${p3a != null ? p3a.toFixed(0) + '%' : '–'}</td>
-      <td class="pct-kas4">${p4a != null ? p4a.toFixed(0) + '%' : '–'}</td>
-      <td class="${da > 0 ? 'diff-pos' : (da < 0 ? 'diff-neg' : '')}">${da != null ? (da > 0 ? '+' : '') + da.toFixed(0) : '–'}</td>
-      <td class="pct-kas3">${p3b != null ? p3b.toFixed(0) + '%' : '–'}</td>
-      <td class="pct-kas4">${p4b != null ? p4b.toFixed(0) + '%' : '–'}</td>
-      <td class="${db > 0 ? 'diff-pos' : (db < 0 ? 'diff-neg' : '')}">${db != null ? (db > 0 ? '+' : '') + db.toFixed(0) : '–'}</td>
+      <td class="pct-kas3">${r3.pct != null ? r3.pct.toFixed(0) + '%' : '–'}</td>
+      <td class="pct-kas4">${r4.pct != null ? r4.pct.toFixed(0) + '%' : '–'}</td>
+      <td class="${dPct > 0 ? 'diff-pos' : (dPct < 0 ? 'diff-neg' : '')}">${dPct != null ? (dPct > 0 ? '+' : '') + dPct.toFixed(0) : '–'}</td>
+      <td>${r3.belowHours != null ? r3.belowHours.toFixed(1) : '–'}</td>
+      <td>${r4.belowHours != null ? r4.belowHours.toFixed(1) : '–'}</td>
+      <td class="${dHrs > 0 ? 'diff-pos' : (dHrs < 0 ? 'diff-neg' : '')}">${dHrs != null ? (dHrs > 0 ? '+' : '') + dHrs.toFixed(1) : '–'}</td>
     </tr>`;
   }
   html += `</tbody></table></div>`;
 
-  // VD isoline chart with current points
   html += `<div style="font-size:14px;font-weight:600;margin:24px 0 8px">VD-diagram met huidige waarden</div>`;
   html += `<div style="font-size:12px;color:#777;margin-bottom:10px">Iso-VD lijnen tonen voor welke combinaties van temperatuur en RV welke VD-waarde geldt. De stippen zijn de meest recente metingen.</div>`;
   html += `<div class="chart-wrap" style="height:480px"><canvas id="vdChart"></canvas></div>`;
@@ -309,26 +299,15 @@ function buildVDSection() {
 }
 
 function buildVDChart() {
-  // Build iso-VD curves: for each VD level (1..16) and each T, solve RH
-  // From VD = AH_sat - AH_act = 216.7 * (es - ea) / (T+273.15) in hPa-units
-  // AH_sat = 216.7 * es_hPa / (T+273.15)
-  // VD = AH_sat * (1 - RH/100)  => RH = 100 * (1 - VD/AH_sat)
   function rhForVDAndT(vd, T) {
     const es_kPa = 0.6108 * Math.exp(17.27 * T / (T + 237.3));
-    const es_hPa = es_kPa * 10;
-    const AH_sat = 216.7 * es_hPa / (T + 273.15);
-    const rh = 100 * (1 - vd / AH_sat);
-    return rh;
+    const AH_sat = 216.7 * es_kPa * 10 / (T + 273.15);
+    return 100 * (1 - vd / AH_sat);
   }
-
-  // Distinct colors for VD = 0..16 (mimicking original Croppings chart palette)
   const VD_COLORS = {
-    0: '#3CB371', 1: '#808080', 2: '#FF1493', 3: '#FFD700', 4: '#FFA500',
-    5: '#800080', 6: '#8B0000', 7: '#2F4F4F', 8: '#0000FF', 9: '#00CED1',
-    10: '#9370DB', 11: '#006400', 12: '#FF0000', 13: '#87CEEB',
-    14: '#FFB6C1', 15: '#DDA0DD', 16: '#FFDAB9'
+    0:'#3CB371',1:'#808080',2:'#FF1493',3:'#FFD700',4:'#FFA500',5:'#800080',6:'#8B0000',7:'#2F4F4F',
+    8:'#0000FF',9:'#00CED1',10:'#9370DB',11:'#006400',12:'#FF0000',13:'#87CEEB',14:'#FFB6C1',15:'#DDA0DD',16:'#FFDAB9'
   };
-
   const datasets = [];
   for (let vd = 0; vd <= 16; vd++) {
     const pts = [];
@@ -337,94 +316,42 @@ function buildVDChart() {
       if (rh >= 0 && rh <= 100) pts.push({ x: T, y: rh });
     }
     if (pts.length > 1) {
-      datasets.push({
-        label: 'VD = ' + vd,
-        data: pts,
-        borderColor: VD_COLORS[vd] || '#888',
-        borderWidth: vd === VD_THRESHOLD ? 3 : 1.4,
-        pointRadius: 0,
-        tension: 0.3,
-        fill: false,
-        _isoline: true
-      });
+      datasets.push({ label: 'VD = ' + vd, data: pts, borderColor: VD_COLORS[vd] || '#888',
+        borderWidth: vd === VD_THRESHOLD ? 3 : 1.4, pointRadius: 0, tension: 0.3, fill: false, _isoline: true });
     }
   }
-
-  // Add current measurement points per sensor (use latest non-empty day)
   const lastDay = DAYS[DAYS.length - 1];
   const sensorMarkers = [
-    { id: 'VDB45', kas: 'Kas 3', label: 'VDB45 (29 cm)', color: '#D32F2F', shape: 'circle' },
-    { id: 'VDB39', kas: 'Kas 3', label: 'VDB39 (128 cm)', color: '#B71C1C', shape: 'triangle' },
-    { id: 'VDB37', kas: 'Kas 4', label: 'VDB37 (29 cm)', color: '#2E7D32', shape: 'circle' },
-    { id: 'VDB36', kas: 'Kas 4', label: 'VDB36 (128 cm)', color: '#1B5E20', shape: 'triangle' },
-    { id: 'VDB14', kas: 'Kas 4', label: 'VDB14 (184 cm)', color: '#004D40', shape: 'rect' }
+    { id: 'VDB45', label: 'VDB45 (29 cm)',  color: '#D32F2F', shape: 'circle' },
+    { id: 'VDB39', label: 'VDB39 (128 cm)', color: '#B71C1C', shape: 'triangle' },
+    { id: 'VDB37', label: 'VDB37 (29 cm)',  color: '#2E7D32', shape: 'circle' },
+    { id: 'VDB36', label: 'VDB36 (128 cm)', color: '#1B5E20', shape: 'triangle' },
+    { id: 'VDB14', label: 'VDB14 (184 cm)', color: '#004D40', shape: 'rect' }
   ];
-
   for (const sm of sensorMarkers) {
     const d = DATA[lastDay] && DATA[lastDay][sm.id];
     if (!d || !d.hrs.length) continue;
-    // Take latest measurement of the day
     let latestIdx = 0;
-    for (let i = 1; i < d.hrs.length; i++) {
-      if (d.hrs[i] > d.hrs[latestIdx]) latestIdx = i;
-    }
+    for (let i = 1; i < d.hrs.length; i++) if (d.hrs[i] > d.hrs[latestIdx]) latestIdx = i;
     const T = d.temp[latestIdx], RH = d.hum[latestIdx];
-    datasets.push({
-      label: sm.label + ' (laatste meting)',
-      data: [{ x: T, y: RH }],
-      borderColor: sm.color,
-      backgroundColor: sm.color,
-      pointRadius: 7,
-      pointHoverRadius: 9,
-      pointStyle: sm.shape,
-      showLine: false
-    });
+    datasets.push({ label: sm.label + ' (laatste meting)', data: [{ x: T, y: RH }],
+      borderColor: sm.color, backgroundColor: sm.color, pointRadius: 7, pointHoverRadius: 9,
+      pointStyle: sm.shape, showLine: false });
   }
-
   return new Chart(document.getElementById('vdChart'), {
-    type: 'scatter',
-    data: { datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
+    type: 'scatter', data: { datasets },
+    options: { responsive: true, maintainAspectRatio: false, animation: false,
       plugins: {
-        legend: {
-          display: true,
-          position: 'right',
-          labels: {
-            font: { size: 10 },
-            boxWidth: 14,
-            // Only show non-isoline labels OR every other isoline to reduce clutter
-            filter: (item, data) => {
-              const ds = data.datasets[item.datasetIndex];
-              return !ds._isoline || ds.label === 'VD = ' + VD_THRESHOLD || true;
-            }
-          }
-        },
-        tooltip: {
-          callbacks: {
-            label: ctx => {
-              const T = ctx.parsed.x, RH = ctx.parsed.y;
-              const vd = vd_gm3(T, RH);
-              return `${ctx.dataset.label}: T=${T.toFixed(1)}°C, RV=${RH.toFixed(0)}%${vd != null ? ', VD=' + vd.toFixed(1) + ' g/m³' : ''}`;
-            }
-          }
-        }
+        legend: { display: true, position: 'right', labels: { font: { size: 10 }, boxWidth: 14 } },
+        tooltip: { callbacks: { label: ctx => {
+          const T = ctx.parsed.x, RH = ctx.parsed.y;
+          const vd = vd_gm3(T, RH);
+          return `${ctx.dataset.label}: T=${T.toFixed(1)}°C, RV=${RH.toFixed(0)}%${vd != null ? ', VD=' + vd.toFixed(1) + ' g/m³' : ''}`;
+        }}}
       },
       scales: {
-        x: {
-          type: 'linear', min: 5, max: 35,
-          title: { display: true, text: 'Temperatuur (°C)', color: '#555' },
-          ticks: { stepSize: 1, color: '#888' },
-          grid: { color: 'rgba(0,0,0,0.08)' }
-        },
-        y: {
-          type: 'linear', min: 0, max: 100,
-          title: { display: true, text: 'Relatieve vochtigheid (%)', color: '#555' },
-          ticks: { stepSize: 10, color: '#888' },
-          grid: { color: 'rgba(0,0,0,0.08)' }
-        }
+        x: { type: 'linear', min: 5, max: 35, title: { display: true, text: 'Temperatuur (°C)', color: '#555' }, ticks: { stepSize: 1, color: '#888' }, grid: { color: 'rgba(0,0,0,0.08)' } },
+        y: { type: 'linear', min: 0, max: 100, title: { display: true, text: 'Relatieve vochtigheid (%)', color: '#555' }, ticks: { stepSize: 10, color: '#888' }, grid: { color: 'rgba(0,0,0,0.08)' } }
       }
     }
   });
@@ -437,13 +364,12 @@ function render() {
   document.getElementById('next').disabled = dayIdx === DAYS.length - 1;
   document.getElementById('dots').textContent = DAYS.map((_, i) => i === dayIdx ? '●' : '·').join(' ');
   charts.forEach((chart, i) => {
-    if (!PAIRS[i]) return; // skip vd chart
+    if (!PAIRS[i]) return;
     chart.data.datasets = mkDatasets(PAIRS[i], day, mode);
     chart.options.scales.y.title.text = mode === 'temp' ? 'Temperatuur (°C)' : 'Luchtvochtigheid (%)';
     chart.update('none');
   });
 }
-
 function go(d) { dayIdx = Math.max(0, Math.min(DAYS.length - 1, dayIdx + d)); render(); }
 function setMode(m, btn) {
   mode = m;
@@ -458,15 +384,10 @@ function buildUI() {
       <div class="pair-title">${p.title}</div>
       <div class="pair-sub">${p.subtitle}</div>
       <div class="legend">
-        ${p.sensors.map(s => `
-          <span class="li ${s.kas === 'Kas 3' ? 'kas3' : 'kas4'}">
-            ${legendSwatch(s.color, s.dash)}
-            <strong>${s.kas}</strong> — ${s.id} (${s.height} cm)
-          </span>`).join('')}
+        ${p.sensors.map(s => `<span class="li ${s.kas === 'Kas 3' ? 'kas3' : 'kas4'}">${legendSwatch(s.color, s.dash)}<strong>${s.kas}</strong> — ${s.id} (${s.height} cm)</span>`).join('')}
       </div>
       <div class="chart-wrap"><canvas id="chart${i}"></canvas></div>
-    </div>
-  `).join('');
+    </div>`).join('');
 
   document.getElementById('app').innerHTML = `
     <div class="controls">
@@ -483,39 +404,25 @@ function buildUI() {
     ${pairBlocks}
     <div class="dots" id="dots"></div>
     <hr style="margin:30px 0;border:none;border-top:1px solid #eee">
-    ${buildVDSection()}
-  `;
+    ${buildVDSection()}`;
 
   charts = PAIRS.map((p, i) => new Chart(document.getElementById('chart' + i), {
     type: 'line',
     data: { datasets: mkDatasets(p, DAYS[dayIdx], 'temp') },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
+      responsive: true, maintainAspectRatio: false, animation: false,
       interaction: { mode: 'nearest', axis: 'x', intersect: false },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          enabled: true,
-          mode: 'nearest',
-          axis: 'x',
-          intersect: false,
+        tooltip: { enabled: true, mode: 'nearest', axis: 'x', intersect: false,
           callbacks: {
-            title: (items) => {
-              if (!items.length) return '';
-              return '🕐 ' + mkLabel(items[0].parsed.x);
-            },
-            beforeBody: (items) => {
+            title: items => items.length ? '🕐 ' + mkLabel(items[0].parsed.x) : '',
+            beforeBody: items => {
               if (!items.length) return [];
-              const chart = items[0].chart;
-              const x = items[0].parsed.x;
-              const lines = [];
+              const chart = items[0].chart, x = items[0].parsed.x, lines = [];
               chart.data.datasets.forEach(ds => {
                 const y = interpolate(ds._pts, x);
-                if (y !== null) {
-                  lines.push(ds.label + ': ' + y.toFixed(1) + (mode === 'temp' ? ' °C' : ' %'));
-                }
+                if (y !== null) lines.push(ds.label + ': ' + y.toFixed(1) + (mode === 'temp' ? ' °C' : ' %'));
               });
               return lines;
             },
@@ -524,31 +431,18 @@ function buildUI() {
         }
       },
       scales: {
-        x: {
-          type: 'linear', min: 0, max: 24,
-          ticks: { stepSize: 2, callback: v => v + 'u', color: '#888' },
-          grid: { color: 'rgba(0,0,0,0.06)' },
-          title: { display: true, text: 'Tijd van de dag', color: '#888', font: { size: 11 } }
-        },
-        y: {
-          beginAtZero: false,
-          grace: '5%',
-          ticks: { color: '#888' },
-          grid: { color: 'rgba(0,0,0,0.06)' },
-          title: { display: true, text: 'Temperatuur (°C)', color: '#888', font: { size: 12 } }
-        }
+        x: { type: 'linear', min: 0, max: 24, ticks: { stepSize: 2, callback: v => v + 'u', color: '#888' }, grid: { color: 'rgba(0,0,0,0.06)' }, title: { display: true, text: 'Tijd van de dag', color: '#888', font: { size: 11 } } },
+        y: { beginAtZero: false, grace: '5%', ticks: { color: '#888' }, grid: { color: 'rgba(0,0,0,0.06)' }, title: { display: true, text: 'Temperatuur (°C)', color: '#888', font: { size: 12 } } }
       }
     }
   }));
 
-  // Build VD scatter chart
   buildVDChart();
 
   document.addEventListener('keydown', e => {
     if (e.key === 'ArrowLeft') go(-1);
     if (e.key === 'ArrowRight') go(1);
   });
-
   render();
 }
 
@@ -557,30 +451,19 @@ async function loadData() {
     const res = await fetch('/api/data');
     const json = await res.json();
     if (!json.ok) throw new Error(json.error);
-
     DATA = json.data;
     DAYS = Object.keys(DATA).sort();
-
     if (DAYS.length === 0) {
-      document.getElementById('app').innerHTML =
-        `<div class="error">⚠️ Geen data gevonden voor de afgelopen 14 dagen.<br>
-         <button class="refresh-btn" onclick="loadData()" style="font-size:14px;padding:8px 16px">Opnieuw proberen</button></div>`;
+      document.getElementById('app').innerHTML = `<div class="error">⚠️ Geen data gevonden voor de afgelopen 14 dagen.<br><button class="refresh-btn" onclick="loadData()" style="font-size:14px;padding:8px 16px">Opnieuw proberen</button></div>`;
       document.getElementById('status').textContent = 'Geen recente data';
       return;
     }
-
     dayIdx = Math.max(0, DAYS.length - 2);
-
     const fetched = new Date(json.fetched);
-    document.getElementById('status').innerHTML =
-      `Laatste update: ${fetched.toLocaleString('nl-NL')} &nbsp;
-       <button class="refresh-btn" onclick="loadData()">↻ Vernieuwen</button>`;
-
+    document.getElementById('status').innerHTML = `Laatste update: ${fetched.toLocaleString('nl-NL')} &nbsp;<button class="refresh-btn" onclick="loadData()">↻ Vernieuwen</button>`;
     buildUI();
   } catch (err) {
-    document.getElementById('app').innerHTML =
-      `<div class="error">❌ ${err.message}<br><br>
-       <button class="refresh-btn" onclick="loadData()" style="font-size:14px;padding:8px 16px">Opnieuw proberen</button></div>`;
+    document.getElementById('app').innerHTML = `<div class="error">❌ ${err.message}<br><br><button class="refresh-btn" onclick="loadData()" style="font-size:14px;padding:8px 16px">Opnieuw proberen</button></div>`;
     document.getElementById('status').textContent = 'Laden mislukt';
   }
 }
