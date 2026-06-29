@@ -104,6 +104,7 @@ const PAIRS = [
 ];
 
 const VD_THRESHOLD = 10;
+const VD_PERIOD_DAYS = 7;
 
 let DATA = null, DAYS = [], dayIdx = 0, mode = 'temp', charts = [];
 
@@ -160,7 +161,6 @@ function mkDatasets(pair, day, m) {
   });
 }
 
-// Returns { totalHours, belowHours, pct }
 function timeBelowThreshold(sensorId, days) {
   let total = 0, below = 0;
   for (const day of days) {
@@ -186,8 +186,6 @@ function timeBelowThreshold(sensorId, days) {
   }
   return { totalHours: total, belowHours: below, pct: total > 0 ? (below/total)*100 : null };
 }
-function pctBelowThreshold(sensorId, days) { return timeBelowThreshold(sensorId, days).pct; }
-function dailyPct(sensorId, day) { return pctBelowThreshold(sensorId, [day]); }
 
 function fmtHours(h) {
   if (h == null) return '–';
@@ -201,12 +199,21 @@ function buildVDSection() {
     { name: 'Midden (128 cm)', k3: 'VDB39', k4: 'VDB36' }
   ];
 
+  // Use only the last N days for VD analysis
+  const allDaysSorted = [...DAYS].sort();
+  const periodDays = allDaysSorted.slice(-VD_PERIOD_DAYS);
+  const nDays = periodDays.length;
+  const fromDay = periodDays[0];
+  const toDay = periodDays[periodDays.length - 1];
+
   let html = `<div class="section-title">Vochtdeficiet (VD) analyse — % van de tijd onder VD = ${VD_THRESHOLD} g/m³</div>`;
-  html += `<div style="font-size:12px;color:#777;margin-bottom:14px">VD berekend uit temperatuur en luchtvochtigheid (Magnus-formule). Een lage VD betekent vochtige lucht.</div>`;
+  html += `<div style="font-size:12px;color:#777;margin-bottom:14px">
+    Analyse over de <strong>laatste ${nDays} dagen</strong> (${fmtDayShort(fromDay)} t/m ${fmtDayShort(toDay)}).
+    VD berekend uit temperatuur en luchtvochtigheid (Magnus-formule). Een lage VD betekent vochtige lucht.</div>`;
 
   // === HEADLINE: Hour difference for middle sensor (128 cm) ===
-  const midK3 = timeBelowThreshold('VDB39', DAYS);
-  const midK4 = timeBelowThreshold('VDB36', DAYS);
+  const midK3 = timeBelowThreshold('VDB39', periodDays);
+  const midK4 = timeBelowThreshold('VDB36', periodDays);
   const hourDiff = (midK3.belowHours != null && midK4.belowHours != null)
     ? midK4.belowHours - midK3.belowHours : null;
   const isPos = hourDiff != null && hourDiff > 0;
@@ -214,9 +221,9 @@ function buildVDSection() {
 
   if (hourDiff != null) {
     const absH = Math.abs(hourDiff);
-    const perDay = absH / DAYS.length;
+    const perDay = absH / nDays;
     html += `<div class="vd-headline ${isNeg ? 'neg' : ''}">
-      <div class="vd-headline-label">Midden-sensor (128 cm) — over ${DAYS.length} dagen</div>
+      <div class="vd-headline-label">Midden-sensor (128 cm) — over ${nDays} dagen</div>
       <div class="vd-headline-big ${isPos ? 'pos' : (isNeg ? 'neg' : '')}">
         ${isPos ? 'Kas 4 zit ' + fmtHours(absH) + ' langer onder VD ' + VD_THRESHOLD + ' dan Kas 3'
           : (isNeg ? 'Kas 3 zit ' + fmtHours(absH) + ' langer onder VD ' + VD_THRESHOLD + ' dan Kas 4'
@@ -232,11 +239,10 @@ function buildVDSection() {
     </div>`;
   }
 
-  // Per-pair overview
-  html += `<div style="font-size:14px;font-weight:600;margin-bottom:10px">Beide hoogtes — totaal over ${DAYS.length} dagen</div>`;
+  html += `<div style="font-size:14px;font-weight:600;margin-bottom:10px">Beide hoogtes — totaal over ${nDays} dagen</div>`;
   for (const vp of vdPairs) {
-    const r3 = timeBelowThreshold(vp.k3, DAYS);
-    const r4 = timeBelowThreshold(vp.k4, DAYS);
+    const r3 = timeBelowThreshold(vp.k3, periodDays);
+    const r4 = timeBelowThreshold(vp.k4, periodDays);
     const dPct = (r4.pct != null && r3.pct != null) ? (r4.pct - r3.pct) : null;
     const dHrs = (r4.belowHours != null && r3.belowHours != null) ? (r4.belowHours - r3.belowHours) : null;
     html += `<div style="margin-bottom:14px">
@@ -260,20 +266,19 @@ function buildVDSection() {
     </div>`;
   }
 
-  // Daily table
   html += `<div style="font-size:14px;font-weight:600;margin:20px 0 8px">Per dag uitgesplitst (midden — 128 cm)</div>`;
   html += `<div style="overflow-x:auto"><table class="daily-table">
     <thead><tr>
       <th>Datum</th>
       <th>Kas 3<br>(VDB39)</th>
       <th>Kas 4<br>(VDB36)</th>
-      <th>Δ %</th>
-      <th>Uren Kas 3</th>
-      <th>Uren Kas 4</th>
-      <th>Δ uur</th>
+      <th>Δ %<br>(procentpunten)</th>
+      <th>Uren Kas 3<br>onder VD ${VD_THRESHOLD}</th>
+      <th>Uren Kas 4<br>onder VD ${VD_THRESHOLD}</th>
+      <th>Δ uur<br>(Kas 4 − Kas 3)</th>
     </tr></thead><tbody>`;
 
-  const sortedDays = [...DAYS].sort().reverse();
+  const sortedDays = [...periodDays].sort().reverse();
   for (const day of sortedDays) {
     const r3 = timeBelowThreshold('VDB39', [day]);
     const r4 = timeBelowThreshold('VDB36', [day]);
@@ -283,13 +288,14 @@ function buildVDSection() {
       <td>${fmtDayShort(day)}</td>
       <td class="pct-kas3">${r3.pct != null ? r3.pct.toFixed(0) + '%' : '–'}</td>
       <td class="pct-kas4">${r4.pct != null ? r4.pct.toFixed(0) + '%' : '–'}</td>
-      <td class="${dPct > 0 ? 'diff-pos' : (dPct < 0 ? 'diff-neg' : '')}">${dPct != null ? (dPct > 0 ? '+' : '') + dPct.toFixed(0) : '–'}</td>
-      <td>${r3.belowHours != null ? r3.belowHours.toFixed(1) : '–'}</td>
-      <td>${r4.belowHours != null ? r4.belowHours.toFixed(1) : '–'}</td>
-      <td class="${dHrs > 0 ? 'diff-pos' : (dHrs < 0 ? 'diff-neg' : '')}">${dHrs != null ? (dHrs > 0 ? '+' : '') + dHrs.toFixed(1) : '–'}</td>
+      <td class="${dPct > 0 ? 'diff-pos' : (dPct < 0 ? 'diff-neg' : '')}">${dPct != null ? (dPct > 0 ? '+' : '') + dPct.toFixed(0) + ' pp' : '–'}</td>
+      <td>${r3.belowHours != null ? r3.belowHours.toFixed(1) + ' uur' : '–'}</td>
+      <td>${r4.belowHours != null ? r4.belowHours.toFixed(1) + ' uur' : '–'}</td>
+      <td class="${dHrs > 0 ? 'diff-pos' : (dHrs < 0 ? 'diff-neg' : '')}">${dHrs != null ? (dHrs > 0 ? '+' : '') + dHrs.toFixed(1) + ' uur' : '–'}</td>
     </tr>`;
   }
   html += `</tbody></table></div>`;
+  html += `<div style="font-size:11px;color:#999;margin-top:6px">pp = procentpunten · Positieve Δ betekent Kas 4 zit langer onder VD ${VD_THRESHOLD}</div>`;
 
   html += `<div style="font-size:14px;font-weight:600;margin:24px 0 8px">VD-diagram met huidige waarden</div>`;
   html += `<div style="font-size:12px;color:#777;margin-bottom:10px">Iso-VD lijnen tonen voor welke combinaties van temperatuur en RV welke VD-waarde geldt. De stippen zijn de meest recente metingen.</div>`;
