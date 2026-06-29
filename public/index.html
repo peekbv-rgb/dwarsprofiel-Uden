@@ -199,7 +199,6 @@ function buildVDSection() {
     { name: 'Midden (128 cm)', k3: 'VDB39', k4: 'VDB36' }
   ];
 
-  // Use only the last N days for VD analysis
   const allDaysSorted = [...DAYS].sort();
   const periodDays = allDaysSorted.slice(-VD_PERIOD_DAYS);
   const nDays = periodDays.length;
@@ -211,7 +210,6 @@ function buildVDSection() {
     Analyse over de <strong>laatste ${nDays} dagen</strong> (${fmtDayShort(fromDay)} t/m ${fmtDayShort(toDay)}).
     VD berekend uit temperatuur en luchtvochtigheid (Magnus-formule). Een lage VD betekent vochtige lucht.</div>`;
 
-  // === HEADLINE: Hour difference for middle sensor (128 cm) ===
   const midK3 = timeBelowThreshold('VDB39', periodDays);
   const midK4 = timeBelowThreshold('VDB36', periodDays);
   const hourDiff = (midK3.belowHours != null && midK4.belowHours != null)
